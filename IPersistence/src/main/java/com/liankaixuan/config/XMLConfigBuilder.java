@@ -4,6 +4,7 @@ package com.liankaixuan.config;
 
 import com.liankaixuan.io.Resources;
 import com.liankaixuan.pojo.Configuration;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;

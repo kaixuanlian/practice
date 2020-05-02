@@ -1,0 +1,30 @@
+<mapper namespace="com.liankaixuan.dao.IUserDao">
+
+    <!--sql的唯一标识：namespace.id来组成 ： statementId-->
+    <select id="findAll" resultType="com.liankaixuan.pojo.User" >
+        select id,username from user
+    </select>
+
+
+    <!--
+        User user = new User()
+        user.setId(1);
+        user.setUsername("zhangsan")
+    -->
+    <select id="findByCondition" resultType="com.liankaixuan.pojo.User"
+            paramterType="com.liankaixuan.pojo.User">
+        select * from user where id = #{id} and username = #{username}
+    </select>
+
+    <update id="update" paramterType="com.liankaixuan.pojo.User">
+        update user set username = #{username}
+    </update>
+
+    <insert id="insert" paramterType="com.liankaixuan.pojo.User">
+        insert into user (id, username) values (#{id}, #{username})
+    </insert>
+
+    <insert id="delete" paramterType="java.lang.Integer">
+        delete from user where id = #{id}
+    </insert>
+</mapper>

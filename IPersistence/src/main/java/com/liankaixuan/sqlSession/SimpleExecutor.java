@@ -12,50 +12,15 @@ import com.liankaixuan.utils.ParameterMappingTokenHandler;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleExecutor implements  Executor {
 
-
     @Override                                                                                //user
     public <E> List<E> query(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
-        // 1. 注册驱动，获取连接
-        Connection connection = configuration.getDataSource().getConnection();
-
-        // 2. 获取sql语句 : select * from user where id = #{id} and username = #{username}
-            //转换sql语句： select * from user where id = ? and username = ? ，转换的过程中，还需要对#{}里面的值进行解析存储
-        String sql = mappedStatement.getSql();
-        BoundSql boundSql = getBoundSql(sql);
-
-        // 3.获取预处理对象：preparedStatement
-        PreparedStatement preparedStatement = connection.prepareStatement(boundSql.getSqlText());
-
-        // 4. 设置参数
-            //获取到了参数的全路径
-         String parameterType = mappedStatement.getParameterType();
-         Class<?> parameterTypeClass = getClassType(parameterType);
-
-        List<ParameterMapping> parameterMappingList = boundSql.getParameterMappingList();
-        for (int i = 0; i < parameterMappingList.size(); i++) {
-            ParameterMapping parameterMapping = parameterMappingList.get(i);
-            String content = parameterMapping.getContent();
-
-            //反射
-            Field declaredField = parameterTypeClass.getDeclaredField(content);
-            //暴力访问
-            declaredField.setAccessible(true);
-            Object o = declaredField.get(params[0]);
-
-            preparedStatement.setObject(i+1,o);
-
-        }
-
-
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, params == null ? null : params[0]);
         // 5. 执行sql
         ResultSet resultSet = preparedStatement.executeQuery();
         String resultType = mappedStatement.getResultType();
@@ -79,14 +44,67 @@ public class SimpleExecutor implements  Executor {
                 PropertyDescriptor propertyDescriptor = new PropertyDescriptor(columnName, resultTypeClass);
                 Method writeMethod = propertyDescriptor.getWriteMethod();
                 writeMethod.invoke(o,value);
-
-
             }
             objects.add(o);
 
         }
             return (List<E>) objects;
 
+    }
+
+    @Override
+    public int update(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, params[0]);
+        // 5. 执行sql
+        return preparedStatement.executeUpdate();
+    }
+
+    @Override
+    public int insert(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, params[0]);
+        // 5. 执行sql
+        return preparedStatement.executeUpdate();
+    }
+
+    @Override
+    public int delete(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, params[0]);
+        return preparedStatement.executeUpdate();
+    }
+
+    private PreparedStatement getPreparedStatement(Configuration configuration, MappedStatement mappedStatement, Object param) throws SQLException, ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        // 1. 注册驱动，获取连接
+        Connection connection = configuration.getDataSource().getConnection();
+        // 2. 获取sql语句 : select * from user where id = #{id} and username = #{username}
+        //转换sql语句： select * from user where id = ? and username = ? ，转换的过程中，还需要对#{}里面的值进行解析存储
+        String sql = mappedStatement.getSql();
+        BoundSql boundSql = getBoundSql(sql);
+
+        // 3.获取预处理对象：preparedStatement
+        PreparedStatement preparedStatement = connection.prepareStatement(boundSql.getSqlText());
+        // 4. 设置参数
+        //获取到了参数的全路径
+        String parameterType = mappedStatement.getParameterType();
+        Class<?> parameterTypeClass = getClassType(parameterType);
+        List<ParameterMapping> parameterMappingList = boundSql.getParameterMappingList();
+        if (parameterMappingList == null){
+            return preparedStatement;
+        }
+        if (parameterMappingList.size() == 1){
+            preparedStatement.setObject(1, param);
+            return preparedStatement;
+        }
+        for (int i = 0; i < parameterMappingList.size(); i++) {
+            ParameterMapping parameterMapping = parameterMappingList.get(i);
+            String content = parameterMapping.getContent();
+            //反射
+            Field declaredField = parameterTypeClass.getDeclaredField(content);
+            //暴力访问
+            declaredField.setAccessible(true);
+            Object o = declaredField.get(param);
+            preparedStatement.setObject(i + 1, o);
+        }
+        return preparedStatement;
     }
 
     private Class<?> getClassType(String paramterType) throws ClassNotFoundException {

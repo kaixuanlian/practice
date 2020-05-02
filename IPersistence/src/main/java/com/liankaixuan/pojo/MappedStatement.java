@@ -1,5 +1,7 @@
 package com.liankaixuan.pojo;
 
+import com.liankaixuan.common.SqlTypeEnum;
+
 public class MappedStatement {
 
     //id标识
@@ -10,6 +12,16 @@ public class MappedStatement {
     private String parameterType;
     //sql语句
     private String sql;
+
+    private SqlTypeEnum sqlType;
+
+    public SqlTypeEnum getSqlType() {
+        return sqlType;
+    }
+
+    public void setSqlType(SqlTypeEnum sqlType) {
+        this.sqlType = sqlType;
+    }
 
     public String getId() {
         return id;
