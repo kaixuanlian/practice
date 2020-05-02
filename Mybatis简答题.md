@@ -24,13 +24,15 @@
     等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行
     executeBatch()批处理。与JDBC批处理相同
   
-4、简述下Mybatis的一级、二级缓存（分别从存储结构、范围、失效场景。三个方面来作答）？
+4、简述下Mybatis的一级、二级缓存（分别从存储结构、范围、失效场景。三个方面来作答）？  
+
 
     **存储结构：**
     
         一级缓存使用的是基于PerpetualCache对象的HashMap存储
         
         二级缓存默认使用的也是PerpetualCache 存储，且可以自定义存储源，如redis、Ehcache
+        
         
     **缓存范围：**
     
